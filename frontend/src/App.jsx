@@ -1,3 +1,5 @@
+// src/App.jsx
+
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -26,7 +28,8 @@ export default function App() {
             !user ? (
               <LoginRegisterPage />
             ) : (
-              <Navigate to={user.role === "admin" ? "/admin" : "/"} replace />
+              // توجيه بناءً على isAdmin بدل role
+              <Navigate to={user.isAdmin ? "/admin" : "/"} replace />
             )
           }
         />
@@ -35,11 +38,7 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            user?.role === "admin" ? (
-              <AdminDashboard />
-            ) : (
-              <Navigate to="/auth" replace />
-            )
+            user?.isAdmin ? <AdminDashboard /> : <Navigate to="/auth" replace />
           }
         />
 

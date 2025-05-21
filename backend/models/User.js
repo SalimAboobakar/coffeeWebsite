@@ -15,16 +15,20 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-// قبل الحفظ، شفر الباسورد
+// قبل الحفظ، إذا تغيّر الحقل password قم بتشفيره
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// قارن الباسورد النصّي مع المشفّر
+// قارن كلمة المرور الواردة بالباسورد المشفر في الـ DB
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
