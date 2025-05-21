@@ -1,126 +1,62 @@
 // src/components/AuthForm.jsx
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { authUser } from "../slices/authSlice";
-import {
-  Button,
-  Form,
-  FormGroup,
-  Label,
-  Input,
-  Spinner,
-  Alert,
-} from "reactstrap";
-import { useNavigate } from "react-router-dom";
+import API from "../axios";
 
-export default function AuthForm() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { status, error } = useSelector((state) => state.auth);
-
-  const [mode, setMode] = useState("login"); // 'login' or 'register'
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-
-  const toggleMode = () => {
-    setMode((prev) => (prev === "login" ? "register" : "login"));
-    setForm({ name: "", email: "", password: "" });
-  };
-
-  const handleChange = (e) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
-  };
+export default function AuthForm({ mode = "login", onSuccess }) {
+  // mode = "login" | "register"
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
+    // حدد المسار بناءً على الوضع
+    const endpoint = mode === "login" ? "/auth/login" : "/auth/register";
+
     try {
-      console.log("▶️ authUser dispatch, mode=", mode, "data=", form);
-      const result = await dispatch(authUser({ mode, data: form })).unwrap();
-      console.log("✔️ authUser succeeded:", result);
-      localStorage.setItem("token", result.token);
-      navigate(result.user.role === "admin" ? "/admin" : "/");
+      const res = await API.post(endpoint, { email, password });
+      // إذا نجح، ترسل النتائج للوالد (مثلاً لتخزين التوكن)
+      onSuccess && onSuccess(res.data);
     } catch (err) {
-      console.error("❌ authUser failed:", err);
-      // error message is stored in state.error
+      console.error(`❌ authUser failed:`, err.response || err);
+      // حاول قراء رسالة الخطأ من الـ response
+      const msg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        "حدث خطأ في الاتصال بالخادم";
+      setError(msg);
     }
   };
 
-  if (status === "loading") {
-    return (
-      <div className="text-center my-5">
-        <Spinner color="dark" />
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="auth-form mx-auto p-4 bg-white rounded shadow-sm"
-      style={{ maxWidth: 400 }}
-    >
-      <h2 className="text-center mb-4">
-        {mode === "login" ? "Log In" : "Sign Up"}
-      </h2>
+    <form onSubmit={handleSubmit}>
+      <h2>{mode === "login" ? "تسجيل الدخول" : "إنشاء حساب جديد"}</h2>
 
-      {status === "failed" && (
-        <Alert color="danger">
-          {error || "Authentication failed. Please try again."}
-        </Alert>
-      )}
+      {error && <div style={{ color: "red" }}>{error}</div>}
 
-      <Form onSubmit={handleSubmit}>
-        {mode === "register" && (
-          <FormGroup>
-            <Label for="name">Name</Label>
-            <Input
-              type="text"
-              name="name"
-              id="name"
-              placeholder="Your name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
-        )}
-
-        <FormGroup>
-          <Label for="email">Email</Label>
-          <Input
-            type="email"
-            name="email"
-            id="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-        </FormGroup>
-
-        <FormGroup>
-          <Label for="password">Password</Label>
-          <Input
-            type="password"
-            name="password"
-            id="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-        </FormGroup>
-
-        <Button color="primary" block type="submit">
-          {mode === "login" ? "Log In" : "Sign Up"}
-        </Button>
-      </Form>
-
-      <div className="mt-3 text-center">
-        <Button color="link" onClick={toggleMode}>
-          {mode === "login"
-            ? "Need an account? Register"
-            : "Already have an account? Log In"}
-        </Button>
+      <div>
+        <label>البريد الإلكتروني</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
       </div>
-    </div>
+
+      <div>
+        <label>كلمة المرور</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+
+      <button type="submit">{mode === "login" ? "دخول" : "تسجيل"}</button>
+    </form>
   );
 }
