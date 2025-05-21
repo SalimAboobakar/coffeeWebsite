@@ -12,7 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 export default function App() {
   const { user } = useSelector((state) => state.auth);
-  const isAdmin = user?.isAdmin;
+  const isAdmin = user?.role === "admin";
 
   return (
     <BrowserRouter>
