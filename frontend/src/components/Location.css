@@ -1,0 +1,14 @@
+.location-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: 1rem;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.location-info .loc,
+.location-info .loading,
+.location-info .error {
+  line-height: 1.2;
+}
