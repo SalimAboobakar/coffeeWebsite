@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 export default function App() {
   const { user } = useSelector((state) => state.auth);
+  const isAdmin = user?.isAdmin;
 
   return (
     <BrowserRouter>
@@ -21,15 +22,14 @@ export default function App() {
         {/* Public home */}
         <Route path="/" element={<ProductsPage />} />
 
-        {/* Auth page (login/register) */}
+        {/* Auth page */}
         <Route
           path="/auth"
           element={
             !user ? (
               <LoginRegisterPage />
             ) : (
-              // توجيه بناءً على isAdmin بدل role
-              <Navigate to={user.isAdmin ? "/admin" : "/"} replace />
+              <Navigate to={isAdmin ? "/admin" : "/"} replace />
             )
           }
         />
@@ -38,7 +38,11 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            user?.isAdmin ? <AdminDashboard /> : <Navigate to="/auth" replace />
+            isAdmin ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to={user ? "/" : "/auth"} replace />
+            )
           }
         />
 
@@ -48,7 +52,7 @@ export default function App() {
           element={user ? <CartPage /> : <Navigate to="/auth" replace />}
         />
 
-        {/* Catch-all redirects home */}
+        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
