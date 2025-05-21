@@ -1,16 +1,27 @@
-const express = require("express");
-const {
-  getAll,
-  create,
-  update,
-  remove,
-} = require("../controllers/productController");
-const { protect, isAdmin } = require("../middleware/auth");
-const router = express.Router();
+// backend/routes/products.js
 
-router.get("/", getAll);
-router.post("/", protect, isAdmin, create);
-router.put("/:id", protect, isAdmin, update);
-router.delete("/:id", protect, isAdmin, remove);
+const express = require("express");
+const router = express.Router();
+const { protect } = require("../middleware/authMiddleware");
+const {
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} = require("../controllers/productController");
+
+// GET /api/products          → list all products
+// POST /api/products         → create new product (protected)
+router.route("/").get(getProducts).post(protect, createProduct);
+
+// GET /api/products/:id      → get one product
+// PUT /api/products/:id      → update product (protected)
+// DELETE /api/products/:id   → delete product (protected)
+router
+  .route("/:id")
+  .get(getProductById)
+  .put(protect, updateProduct)
+  .delete(protect, deleteProduct);
 
 module.exports = router;

@@ -1,23 +1,79 @@
+// backend/controllers/productController.js
+
 const Product = require("../models/Product");
 
-exports.getAll = async (req, res) => {
-  const products = await Product.find();
-  res.json(products);
+// @desc    Get all products
+// @route   GET /api/products
+// @access  Public
+exports.getProducts = async (req, res, next) => {
+  try {
+    const products = await Product.find({});
+    res.json(products);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.create = async (req, res) => {
-  const product = await Product.create(req.body);
-  res.status(201).json(product);
+// @desc    Get single product by ID
+// @route   GET /api/products/:id
+// @access  Public
+exports.getProductById = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.update = async (req, res) => {
-  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
-  res.json(product);
+// @desc    Create new product
+// @route   POST /api/products
+// @access  Protected
+exports.createProduct = async (req, res, next) => {
+  try {
+    const { name, description, price, countInStock, image } = req.body;
+    const product = new Product({
+      name,
+      description,
+      price,
+      countInStock,
+      image,
+    });
+    await product.save();
+    res.status(201).json(product);
+  } catch (err) {
+    next(err);
+  }
 };
 
-exports.remove = async (req, res) => {
-  await Product.findByIdAndDelete(req.params.id);
-  res.sendStatus(204);
+// @desc    Update a product
+// @route   PUT /api/products/:id
+// @access  Protected
+exports.updateProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    Object.assign(product, req.body);
+    await product.save();
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Delete a product
+// @route   DELETE /api/products/:id
+// @access  Protected
+exports.deleteProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    await product.remove();
+    res.json({ message: "Product removed" });
+  } catch (err) {
+    next(err);
+  }
 };
