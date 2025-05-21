@@ -1,5 +1,5 @@
 // server.js
-
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -40,6 +40,9 @@ app.options("*", cors(corsOptions));
 
 // Parse JSON bodies
 app.use(express.json());
+
+// Parse cookies
+app.use(cookieParser());
 
 // --- API Routes ---
 app.use("/api/auth", require("./routes/auth"));

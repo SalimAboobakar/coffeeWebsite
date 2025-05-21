@@ -1,22 +1,21 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+// backend/middleware/authMiddleware.js
 
-exports.protect = async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "Not authorized" });
+const jwt = require("jsonwebtoken");
+
+/**
+ * تحقّق من وجود JWT في الكوكيز وصحّته، ثم ضع بيانات المستخدم في req.user
+ */
+exports.protect = (req, res, next) => {
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.status(401).json({ message: "غير مصرح: الرجاء تسجيل الدخول" });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select("-password");
+    req.user = { id: decoded.id, email: decoded.email };
     next();
   } catch (err) {
-    res.status(401).json({ message: "Token invalid" });
+    return res.status(401).json({ message: "الرمز منتهي أو غير صالح" });
   }
-};
-
-exports.isAdmin = (req, res, next) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ message: "Admin only" });
-  }
-  next();
 };
