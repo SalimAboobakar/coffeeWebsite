@@ -29,7 +29,7 @@ exports.getProductById = async (req, res, next) => {
 
 // @desc    Create new product
 // @route   POST /api/products
-// @access  Protected
+// @access  Admin
 exports.createProduct = async (req, res, next) => {
   try {
     const { name, description, price, countInStock, image } = req.body;
@@ -49,12 +49,11 @@ exports.createProduct = async (req, res, next) => {
 
 // @desc    Update a product
 // @route   PUT /api/products/:id
-// @access  Protected
+// @access  Admin
 exports.updateProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
-
     Object.assign(product, req.body);
     await product.save();
     res.json(product);
@@ -65,15 +64,15 @@ exports.updateProduct = async (req, res, next) => {
 
 // @desc    Delete a product
 // @route   DELETE /api/products/:id
-// @access  Protected
+// @access  Admin
 exports.deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
-
-    await product.remove();
-    res.json({ message: "Product removed" });
+    await Product.deleteOne({ _id: product._id });
+    res.json({ message: "تم حذف المنتج بنجاح" });
   } catch (err) {
+    console.error(`Error deleting product ${req.params.id}:`, err);
     next(err);
   }
 };
