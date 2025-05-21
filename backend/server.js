@@ -12,51 +12,50 @@ const app = express();
 // Connect to database
 connectDB();
 
-// Parse JSON bodies
-app.use(express.json());
-
 // --- CORS Configuration ---
-// Allow one or more origins via an environment variable (comma-separated)
+// Allow one or more origins via environment variable (comma-separated)
 const rawOrigins =
   process.env.FRONTEND_URLS ||
   process.env.FRONTEND_URL ||
   "http://localhost:3000";
-const allowedOrigins = rawOrigins.split(",").map((origin) => origin.trim());
+const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // allow requests with no origin (e.g. mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      callback(
-        new Error(`CORS policy: Origin "${origin}" not allowed by CORS`),
-        false
-      );
-    },
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow requests with no origin (e.g. mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS policy: Origin "${origin}" not allowed`), false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Enable CORS and preflight across the board
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// Parse JSON bodies
+app.use(express.json());
 
 // --- API Routes ---
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
 
-// Health check
+// Health check endpoint
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 // --- Static file serving in production ---
 if (process.env.NODE_ENV === "production") {
   const buildPath = path.join(__dirname, "../frontend/build");
   app.use(express.static(buildPath));
-
-  // Serve React app for any route not matching /api/*
-  app.get(/^(?!\/api).*/, (req, res) => {
-    res.sendFile(path.join(buildPath, "index.html"));
-  });
+  app.get(/^(?!\/api).*/, (req, res) =>
+    res.sendFile(path.join(buildPath, "index.html"))
+  );
 }
 
 // --- Global Error Handler ---
@@ -73,10 +72,10 @@ app.use((err, req, res, next) => {
 
 // --- Start Server ---
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () =>
+app.listen(PORT, () => {
   console.log(
     `Server started on port ${PORT} in ${
       process.env.NODE_ENV || "development"
     } mode`
-  )
-);
+  );
+});

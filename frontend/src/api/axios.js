@@ -1,10 +1,8 @@
 // src/axios.js
-
 import axios from "axios";
 
-// استخدم مساراً نسبياً إذا كان الـ frontend والـ API يخدمان من نفس الدومين
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "/api",
+  baseURL: process.env.REACT_APP_API_URL || "/api", // ← لاحظ /api
   withCredentials: true,
 });
 
