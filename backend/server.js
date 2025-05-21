@@ -1,9 +1,9 @@
 // server.js
+
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const connectDB = require("./config/db");
 
 // Create Express app
@@ -13,7 +13,6 @@ const app = express();
 connectDB();
 
 // --- CORS Configuration ---
-// Allow one or more origins via environment variable (comma-separated)
 const rawOrigins =
   process.env.FRONTEND_URLS ||
   process.env.FRONTEND_URL ||
@@ -24,9 +23,7 @@ const corsOptions = {
   origin: (origin, callback) => {
     // allow requests with no origin (e.g. mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS policy: Origin "${origin}" not allowed`), false);
   },
   credentials: true,
@@ -34,13 +31,12 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// Enable CORS and preflight across the board
+// Enable CORS and preflight
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 // Parse JSON bodies
 app.use(express.json());
-
 // Parse cookies
 app.use(cookieParser());
 
@@ -51,15 +47,6 @@ app.use("/api/orders", require("./routes/orders"));
 
 // Health check endpoint
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
-
-// --- Static file serving in production ---
-if (process.env.NODE_ENV === "production") {
-  const buildPath = path.join(__dirname, "../frontend/build");
-  app.use(express.static(buildPath));
-  app.get(/^(?!\/api).*/, (req, res) =>
-    res.sendFile(path.join(buildPath, "index.html"))
-  );
-}
 
 // --- Global Error Handler ---
 app.use((err, req, res, next) => {
