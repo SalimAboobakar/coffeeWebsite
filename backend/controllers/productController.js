@@ -20,7 +20,7 @@ exports.getProducts = async (req, res, next) => {
 exports.getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
     res.json(product);
   } catch (err) {
     next(err);
@@ -53,7 +53,7 @@ exports.createProduct = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
     Object.assign(product, req.body);
     await product.save();
     res.json(product);
@@ -67,9 +67,11 @@ exports.updateProduct = async (req, res, next) => {
 // @access  Admin
 exports.deleteProduct = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    await Product.deleteOne({ _id: product._id });
+    // Find and delete in one go
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "المنتج غير موجود" });
+    }
     res.json({ message: "تم حذف المنتج بنجاح" });
   } catch (err) {
     console.error(`Error deleting product ${req.params.id}:`, err);
