@@ -1,32 +1,82 @@
-// backend/server.js
-require("dotenv").config(); // loads .env
-const express = require("express"); // import Express
-const cors = require("cors"); // import CORS middleware
-const connectDB = require("./config/db"); // import our DB connector
+// server.js
 
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const connectDB = require("./config/db");
+
+// Create Express app
 const app = express();
 
-// Enable CORS so your React app (localhost:3000) can talk to this API
+// Connect to database
+connectDB();
+
+// Parse JSON bodies
+app.use(express.json());
+
+// --- CORS Configuration ---
+// Allow one or more origins via an environment variable (comma-separated)
+const rawOrigins =
+  process.env.FRONTEND_URLS ||
+  process.env.FRONTEND_URL ||
+  "http://localhost:3000";
+const allowedOrigins = rawOrigins.split(",").map((origin) => origin.trim());
+
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: (origin, callback) => {
+      // allow requests with no origin (e.g. mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(
+        new Error(`CORS policy: Origin "${origin}" not allowed by CORS`),
+        false
+      );
+    },
     credentials: true,
   })
 );
 
-// Parse JSON bodies on incoming requests
-app.use(express.json());
-
-// Connect to MongoDB (logs “MongoDB connected” if successful)
-connectDB();
-
-// Mount routers (each `require` here pulls in the Router from that file)
+// --- API Routes ---
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
 
-// A simple health-check endpoint
-app.get("/", (req, res) => res.send("API is running"));
+// Health check
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
+// --- Static file serving in production ---
+if (process.env.NODE_ENV === "production") {
+  const buildPath = path.join(__dirname, "../frontend/build");
+  app.use(express.static(buildPath));
+
+  // Serve React app for any route not matching /api/*
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(buildPath, "index.html"));
+  });
+}
+
+// --- Global Error Handler ---
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  const statusCode = err.status || 500;
+  res.status(statusCode).json({
+    error: {
+      message: err.message || "Internal Server Error",
+      ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    },
+  });
+});
+
+// --- Start Server ---
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(
+    `Server started on port ${PORT} in ${
+      process.env.NODE_ENV || "development"
+    } mode`
+  )
+);
